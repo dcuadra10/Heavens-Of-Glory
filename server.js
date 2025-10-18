@@ -41,7 +41,9 @@ function ensureBotReady() {
         return resolve();
       }
       client.once("ready", () => {
-        console.log(`Bot logged in as ${client.user.tag} and ready to serve API requests.`);
+        console.log(`[DEBUG] Bot logged in as ${client.user.tag} and ready to serve API requests.`);
+        console.log(`[DEBUG] Bot ID: ${client.user.id}`);
+        console.log(`[DEBUG] Bot is in ${client.guilds.cache.size} guilds`);
         
         // Set up real-time Discord event listeners
         setupDiscordEventListeners();
@@ -98,8 +100,15 @@ function setupDiscordEventListeners() {
 // --- Real-time Stats Broadcasting ---
 async function broadcastServerStats() {
   try {
+    console.log('[DEBUG] Starting broadcastServerStats...');
     await ensureBotReady();
-    const guild = await client.guilds.fetch(process.env.GUILD_ID);
+    console.log('[DEBUG] Bot is ready, fetching guild...');
+    
+    const guildId = process.env.GUILD_ID;
+    console.log('[DEBUG] Guild ID:', guildId);
+    
+    const guild = await client.guilds.fetch(guildId);
+    console.log('[DEBUG] Guild fetched:', guild.name);
     
     // Fetch all members to count online status
     const members = await guild.members.fetch();
@@ -120,6 +129,7 @@ async function broadcastServerStats() {
     
   } catch (error) {
     console.error('[WebSocket] Error broadcasting stats:', error.message);
+    console.error('[WebSocket] Full error:', error);
   }
 }
 
