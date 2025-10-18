@@ -149,12 +149,24 @@ function setStaticInfo() {
   document.getElementById("server-name").textContent = "🌠 Heavens of Glory || March 27";
   document.getElementById("server-online-count").textContent = "🟢 67";
   document.getElementById("server-status").textContent = "✅ Online";
-  document.getElementById("server-notes").textContent = "📝 TBA";
+  document.getElementById("server-notes").textContent = "📝 Bot configuration in progress";
+  
+  // Update connection status
+  updateConnectionStatus('⚠️ Bot Offline', '#ff9800');
 }
 
 // Load configuration and initialize WebSocket on page load
 async function initialize() {
   await loadConfig();
+  
+  // Set a timeout to show static info if no connection is made
+  setTimeout(() => {
+    const connectionStatus = document.getElementById("connection-status");
+    if (connectionStatus && connectionStatus.textContent.includes("Connecting")) {
+      console.log("Connection timeout, showing static info");
+      setStaticInfo();
+    }
+  }, 10000); // 10 seconds timeout
   
   // Initialize WebSocket connection for real-time updates
   initializeWebSocket();
