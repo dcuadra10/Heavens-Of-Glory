@@ -141,7 +141,7 @@ io.on('connection', (socket) => {
 // Serve configuration to frontend
 app.get('/api/config', (req, res) => {
   res.json({
-    botApiUrl: process.env.BOT_API_URL || 'https://your-bot-name.koyeb.app/api/guild-info'
+    botApiUrl: '/api/guild-info' // Use local API endpoint
   });
 });
 

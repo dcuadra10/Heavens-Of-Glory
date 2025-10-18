@@ -54,7 +54,7 @@ function initializeWebSocket() {
 }
 
 // Get configuration from server
-let botApiUrl = 'https://your-bot-name.koyeb.app/api/guild-info';
+let botApiUrl = '/api/guild-info';
 
 async function loadConfig() {
   try {
@@ -62,7 +62,7 @@ async function loadConfig() {
     const config = await response.json();
     botApiUrl = config.botApiUrl;
   } catch (error) {
-    console.warn('Failed to load config, using default URL:', error);
+    console.warn('Failed to load config, using local endpoint:', error);
   }
 }
 

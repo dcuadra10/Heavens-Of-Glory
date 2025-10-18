@@ -8,9 +8,4 @@
     { "src": "/api/(.*)", "dest": "server.js" },
     { "src": "/(.*)", "dest": "public/$1" }
   ],
-  "env": {
-    "DISCORD_TOKEN": "$DISCORD_TOKEN",
-    "GUILD_ID": "$GUILD_ID",
-    "BOT_API_URL": "$BOT_API_URL"
-  }
 }
