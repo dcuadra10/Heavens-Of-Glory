@@ -55,12 +55,33 @@ function ensureBotReady() {
         console.error('[DEBUG] Discord client error:', error);
       });
       
+      client.on("warn", (warning) => {
+        console.warn('[DEBUG] Discord client warning:', warning);
+      });
+      
+      client.on("debug", (info) => {
+        console.log('[DEBUG] Discord client debug:', info);
+      });
+      
       console.log('[ensureBotReady] Logging in to Discord...');
       console.log('[DEBUG] Discord Token exists:', !!process.env.DISCORD_TOKEN);
+      console.log('[DEBUG] Discord Token length:', process.env.DISCORD_TOKEN ? process.env.DISCORD_TOKEN.length : 0);
       console.log('[DEBUG] Guild ID exists:', !!process.env.GUILD_ID);
+      console.log('[DEBUG] Guild ID value:', process.env.GUILD_ID);
       
-      client.login(process.env.DISCORD_TOKEN).catch((error) => {
+      // Add timeout for login
+      const loginTimeout = setTimeout(() => {
+        console.error('[DEBUG] Login timeout after 30 seconds');
+        reject(new Error('Login timeout'));
+      }, 30000);
+      
+      client.login(process.env.DISCORD_TOKEN).then(() => {
+        clearTimeout(loginTimeout);
+        console.log('[DEBUG] Login successful');
+      }).catch((error) => {
+        clearTimeout(loginTimeout);
         console.error('[DEBUG] Login failed:', error.message);
+        console.error('[DEBUG] Login error details:', error);
         reject(error);
       });
     });
