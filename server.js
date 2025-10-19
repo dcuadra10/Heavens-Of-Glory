@@ -167,25 +167,35 @@ async function broadcastServerStats() {
             statsData.totalMembers = voiceChannelMemberCount;
             statsData.notes = `Voice channel shows ${voiceChannelMemberCount} members.`;
             console.log(`[DEBUG] Extracted member count from voice channel: ${voiceChannelMemberCount}`);
+          } else {
+            // No number found in voice channel name, use fallback
+            statsData.totalMembers = 269;
+            statsData.notes = `Voice channel found but no member count detected. Using fallback: 269 members.`;
+            console.log('[DEBUG] No member count found in voice channel name, using fallback: 269');
           }
           
           // Count online members in the voice channel
           const onlineInVoice = voiceChannel.members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
           statsData.onlineMembers = onlineInVoice;
           console.log(`[DEBUG] Online members in voice channel: ${onlineInVoice}`);
+        } else {
+          // Voice channel not found or wrong type, use fallback
+          statsData.totalMembers = 269;
+          statsData.notes = `Voice channel not found or invalid type. Using fallback: 269 members.`;
+          console.log('[DEBUG] Voice channel not found or invalid, using fallback: 269');
         }
       } catch (voiceError) {
-        console.log('[DEBUG] Could not fetch voice channel, using guild data:', voiceError.message);
-        // Fallback to guild member count
-        const members = await guild.members.fetch();
-        const onlineCount = members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
-        statsData.onlineMembers = onlineCount;
+        console.log('[DEBUG] Could not fetch voice channel, using fallback:', voiceError.message);
+        // Fallback to 269 members
+        statsData.totalMembers = 269;
+        statsData.notes = `Voice channel error. Using fallback: 269 members.`;
+        console.log('[DEBUG] Using fallback member count: 269');
       }
     } else {
-      // No voice channel configured, use guild data
-      const members = await guild.members.fetch();
-      const onlineCount = members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
-      statsData.onlineMembers = onlineCount;
+      // No voice channel configured, use fallback
+      statsData.totalMembers = 269;
+      statsData.notes = `No voice channel configured. Using fallback: 269 members.`;
+      console.log('[DEBUG] No voice channel configured, using fallback: 269');
     }
 
     // Broadcast to all connected clients
@@ -250,23 +260,34 @@ app.get('/api/guild-info', async (req, res) => {
               totalMembers = parseInt(memberCountMatch[1]);
               notes = `Voice channel shows ${totalMembers} members.`;
               console.log(`[API /guild-info] Extracted member count from voice channel: ${totalMembers}`);
+            } else {
+              // No number found in voice channel name, use fallback
+              totalMembers = 269;
+              notes = `Voice channel found but no member count detected. Using fallback: 269 members.`;
+              console.log('[API /guild-info] No member count found in voice channel name, using fallback: 269');
             }
             
             // Count online members in the voice channel
             onlineCount = voiceChannel.members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
             console.log(`[API /guild-info] Online members in voice channel: ${onlineCount}`);
+          } else {
+            // Voice channel not found or wrong type, use fallback
+            totalMembers = 269;
+            notes = `Voice channel not found or invalid type. Using fallback: 269 members.`;
+            console.log('[API /guild-info] Voice channel not found or invalid, using fallback: 269');
           }
         } catch (voiceError) {
-          console.log('[API /guild-info] Could not fetch voice channel, using guild data:', voiceError.message);
-          // Fallback to guild member count
-          const members = await guild.members.fetch();
-          onlineCount = members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
+          console.log('[API /guild-info] Could not fetch voice channel, using fallback:', voiceError.message);
+          // Fallback to 269 members
+          totalMembers = 269;
+          notes = `Voice channel error. Using fallback: 269 members.`;
+          console.log('[API /guild-info] Using fallback member count: 269');
         }
       } else {
-        // No voice channel configured, use guild data
-        console.log('[API /guild-info] No voice channel configured, fetching all members for online count...');
-        const members = await guild.members.fetch();
-        onlineCount = members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
+        // No voice channel configured, use fallback
+        totalMembers = 269;
+        notes = `No voice channel configured. Using fallback: 269 members.`;
+        console.log('[API /guild-info] No voice channel configured, using fallback: 269');
       }
 
       console.log(`[API /guild-info] Found ${totalMembers} total members and ${onlineCount} online members.`);
