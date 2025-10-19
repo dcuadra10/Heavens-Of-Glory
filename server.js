@@ -137,27 +137,60 @@ async function broadcastServerStats() {
     console.log('[DEBUG] Bot is ready, fetching guild...');
     
     const guildId = process.env.GUILD_ID;
+    const voiceChannelId = process.env.VOICE_CHANNEL_ID;
     console.log('[DEBUG] Guild ID:', guildId);
+    console.log('[DEBUG] Voice Channel ID:', voiceChannelId);
     
     const guild = await client.guilds.fetch(guildId);
     console.log('[DEBUG] Guild fetched:', guild.name);
     
-    // Fetch all members to count online status
-    const members = await guild.members.fetch();
-    const onlineCount = members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
-    
-    const statsData = {
+    let statsData = {
       serverName: guild.name,
       status: "Online",
       totalMembers: guild.memberCount,
-      onlineMembers: onlineCount,
+      onlineMembers: 0,
       notes: `Serving ${guild.memberCount} members.`,
       timestamp: new Date().toISOString()
     };
 
+    // Try to get data from voice channel if configured
+    if (voiceChannelId) {
+      try {
+        const voiceChannel = await guild.channels.fetch(voiceChannelId);
+        if (voiceChannel && voiceChannel.type === 2) { // Voice channel type
+          console.log('[DEBUG] Voice channel found:', voiceChannel.name);
+          
+          // Extract member count from voice channel name
+          const memberCountMatch = voiceChannel.name.match(/(\d+)/);
+          if (memberCountMatch) {
+            const voiceChannelMemberCount = parseInt(memberCountMatch[1]);
+            statsData.totalMembers = voiceChannelMemberCount;
+            statsData.notes = `Voice channel shows ${voiceChannelMemberCount} members.`;
+            console.log(`[DEBUG] Extracted member count from voice channel: ${voiceChannelMemberCount}`);
+          }
+          
+          // Count online members in the voice channel
+          const onlineInVoice = voiceChannel.members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
+          statsData.onlineMembers = onlineInVoice;
+          console.log(`[DEBUG] Online members in voice channel: ${onlineInVoice}`);
+        }
+      } catch (voiceError) {
+        console.log('[DEBUG] Could not fetch voice channel, using guild data:', voiceError.message);
+        // Fallback to guild member count
+        const members = await guild.members.fetch();
+        const onlineCount = members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
+        statsData.onlineMembers = onlineCount;
+      }
+    } else {
+      // No voice channel configured, use guild data
+      const members = await guild.members.fetch();
+      const onlineCount = members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
+      statsData.onlineMembers = onlineCount;
+    }
+
     // Broadcast to all connected clients
     io.emit('serverStatsUpdate', statsData);
-    console.log(`[WebSocket] Broadcasted stats update: ${guild.memberCount} total, ${onlineCount} online`);
+    console.log(`[WebSocket] Broadcasted stats update: ${statsData.totalMembers} total, ${statsData.onlineMembers} online`);
     
   } catch (error) {
     console.error('[WebSocket] Error broadcasting stats:', error.message);
@@ -198,13 +231,44 @@ app.get('/api/guild-info', async (req, res) => {
       await ensureBotReady();
       console.log('[API /guild-info] Bot is ready. Fetching guild...');
       const guild = await client.guilds.fetch(process.env.GUILD_ID);
+      const voiceChannelId = process.env.VOICE_CHANNEL_ID;
 
-      // Fetch all members to count online status. This is an expensive operation.
-      console.log('[API /guild-info] Fetching all members for online count...');
-      const members = await guild.members.fetch();
-      const onlineCount = members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
+      let totalMembers = guild.memberCount;
+      let onlineCount = 0;
+      let notes = `Serving ${totalMembers} members.`;
 
-      const totalMembers = guild.memberCount;
+      // Try to get data from voice channel if configured
+      if (voiceChannelId) {
+        try {
+          const voiceChannel = await guild.channels.fetch(voiceChannelId);
+          if (voiceChannel && voiceChannel.type === 2) { // Voice channel type
+            console.log('[API /guild-info] Voice channel found:', voiceChannel.name);
+            
+            // Extract member count from voice channel name
+            const memberCountMatch = voiceChannel.name.match(/(\d+)/);
+            if (memberCountMatch) {
+              totalMembers = parseInt(memberCountMatch[1]);
+              notes = `Voice channel shows ${totalMembers} members.`;
+              console.log(`[API /guild-info] Extracted member count from voice channel: ${totalMembers}`);
+            }
+            
+            // Count online members in the voice channel
+            onlineCount = voiceChannel.members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
+            console.log(`[API /guild-info] Online members in voice channel: ${onlineCount}`);
+          }
+        } catch (voiceError) {
+          console.log('[API /guild-info] Could not fetch voice channel, using guild data:', voiceError.message);
+          // Fallback to guild member count
+          const members = await guild.members.fetch();
+          onlineCount = members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
+        }
+      } else {
+        // No voice channel configured, use guild data
+        console.log('[API /guild-info] No voice channel configured, fetching all members for online count...');
+        const members = await guild.members.fetch();
+        onlineCount = members.filter(m => !m.user.bot && ['online', 'dnd', 'idle'].includes(m.presence?.status)).size;
+      }
+
       console.log(`[API /guild-info] Found ${totalMembers} total members and ${onlineCount} online members.`);
 
       res.json({
@@ -212,7 +276,7 @@ app.get('/api/guild-info', async (req, res) => {
         status: "Online",
         totalMembers: totalMembers,
         onlineMembers: onlineCount,
-        notes: `Serving ${totalMembers} members.`
+        notes: notes
       });
     } catch (botError) {
       console.log('[API /guild-info] Bot connection failed, using static data:', botError.message);

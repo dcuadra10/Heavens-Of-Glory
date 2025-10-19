@@ -35,6 +35,7 @@ Crea un archivo `.env`:
 ```env
 DISCORD_TOKEN=tu_token_del_bot_aqui
 GUILD_ID=tu_server_id_de_discord_aqui
+VOICE_CHANNEL_ID=tu_voice_channel_id_aqui
 BOT_API_URL=https://overseas-mimi-heavens-295a972c.koyeb.app/api/guild-info
 PORT=3000
 ```
@@ -60,10 +61,10 @@ PORT=3000
    - Selecciona scope "bot" y permisos requeridos
    - Agrega el bot a tu servidor de Discord
 
-### 4. Obtener Server ID
-- Habilita Developer Mode en Discord
-- Click derecho en el nombre del servidor → "Copy Server ID"
-- Usa este ID como tu `GUILD_ID` en el archivo `.env`
+### 4. Obtener IDs Necesarios
+- **Server ID**: Habilita Developer Mode en Discord, click derecho en el nombre del servidor → "Copy Server ID"
+- **Voice Channel ID**: Click derecho en el canal de voz que contiene el contador de miembros → "Copy Channel ID"
+- Usa estos IDs en tu archivo `.env` como `GUILD_ID` y `VOICE_CHANNEL_ID`
 
 ### 5. Iniciar Servidor
 ```bash
@@ -77,7 +78,8 @@ El servidor iniciará en `http://localhost:3000`.
 1. Conecta este repositorio a Vercel
 2. Configura las variables de entorno:
    - `DISCORD_TOKEN`: Tu token del bot de Discord
-   - `GUILD_ID`: ID de tu servidor de Discord  
+   - `GUILD_ID`: ID de tu servidor de Discord
+   - `VOICE_CHANNEL_ID`: ID del canal de voz con contador de miembros
    - `BOT_API_URL`: https://overseas-mimi-heavens-295a972c.koyeb.app/api/guild-info
 
 3. Deploy automático
@@ -88,6 +90,7 @@ El servidor iniciará en `http://localhost:3000`.
 |----------|-------------|---------|
 | `DISCORD_TOKEN` | Token del bot de Discord | `tu_token_aqui` |
 | `GUILD_ID` | ID del servidor de Discord | `1234567890123456789` |
+| `VOICE_CHANNEL_ID` | ID del canal de voz con contador de miembros | `9876543210987654321` |
 | `BOT_API_URL` | URL del API del bot (fallback) | `https://overseas-mimi-heavens-295a972c.koyeb.app/api/guild-info` |
 | `PORT` | Puerto del servidor (opcional) | `3000` |
 
@@ -100,6 +103,22 @@ El sistema detecta automáticamente:
 - ✅ **Actualizaciones de miembros**
 
 Y actualiza la página web **instantáneamente** sin necesidad de recargar.
+
+## 🎤 Integración con Canal de Voz
+
+El bot puede leer datos directamente del canal de voz configurado:
+
+- **Extrae el número de miembros** del nombre del canal de voz (ej: "👥 Miembros: 230")
+- **Cuenta miembros en línea** que están actualmente en el canal de voz
+- **Fallback automático** a datos del servidor si el canal de voz no está disponible
+- **Actualizaciones en tiempo real** cuando cambia el nombre del canal de voz
+
+### Formato del Canal de Voz
+El canal de voz debe tener un número en su nombre para que el bot pueda extraer el conteo:
+- ✅ "👥 Miembros: 230"
+- ✅ "📊 Server Stats: 150"
+- ✅ "👥 230 miembros"
+- ❌ "Canal de voz" (sin números)
 
 ## 🛠️ Tecnologías Utilizadas
 
